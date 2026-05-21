@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Join Room - CricStake{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-12">
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <!-- Glowing Accent -->
+        <div class="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/10 rounded-full filter blur-xl"></div>
+        
+        <div class="mb-8 flex items-center space-x-3">
+            <a href="{% url 'dashboard' %}" class="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white p-2 rounded-lg transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div>
+                <h2 class="text-2xl font-black font-outfit text-white">Join Private Room</h2>
+                <p class="text-gray-400 text-xs sm:text-sm">Enter an invite code to join a league</p>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Invite Code -->
+            <div>
+                <label for="invite_code" class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Room Invite Code</label>
+                <input type="text" name="invite_code" id="invite_code" required maxlength="10"
+                       class="w-full bg-obsidian-950/80 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-4 text-white text-center text-2xl font-black font-mono tracking-widest focus:outline-none transition uppercase placeholder-gray-700"
+                       placeholder="CRICST">
+            </div>
+
+            <!-- Tip Alert -->
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-xs text-emerald-400 leading-relaxed">
+                💡 Tip: Ask the room creator for their 6-character unique invite code. It is case-insensitive, so simple lowercase letters work as well!
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" 
+                    class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold py-3.5 rounded-xl transition duration-200 neon-glow-emerald border border-emerald-500">
+                Verify & Enter Room
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+            document.getElementById('invite_code').value = code.toUpperCase();
+        }
+    })();
+</script>
+{% endblock %}

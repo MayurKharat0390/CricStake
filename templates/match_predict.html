@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}Predict - {{ match.team_a.short_name }} vs {{ match.team_b.short_name }} - CricStake{% endblock %}
+
+{% block content %}
+{% load cricstake_filters %}
+<div class="space-y-8">
+    
+    <!-- Match Info Header -->
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6 border-b border-indigo-500/20">
+        <!-- Glowing Ambient -->
+        <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full filter blur-2xl"></div>
+        
+        <!-- Back Link & Room Info -->
+        <div class="w-full md:w-auto flex items-center space-x-3 order-1">
+            <a href="{% url 'room_detail' room.id %}" class="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white p-2.5 rounded-xl transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div>
+                <span class="text-indigo-400 text-xs font-bold uppercase tracking-wider">Room: {{ room.name }}</span>
+                <h1 class="text-xl sm:text-2xl font-black font-outfit text-white">Predictions & Stakes</h1>
+            </div>
+        </div>
+
+        <!-- Match Details Display -->
+        <div class="flex items-center space-x-6 order-2 py-2">
+            <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 flex items-center justify-center">{{ match.team_a.logo_svg|safe }}</div>
+                <span class="font-black text-white text-base sm:text-lg font-outfit">{{ match.team_a.short_name }}</span>
+            </div>
+            <div class="text-center bg-white/5 border border-white/10 px-3 py-1 rounded-full text-xs font-black text-indigo-300">VS</div>
+            <div class="flex items-center space-x-2">
+                <span class="font-black text-white text-base sm:text-lg font-outfit">{{ match.team_b.short_name }}</span>
+                <div class="w-10 h-10 flex items-center justify-center">{{ match.team_b.logo_svg|safe }}</div>
+            </div>
+        </div>
+
+        <!-- Lock Status Card -->
+        <div class="w-full md:w-auto order-3 text-center md:text-right">
+            {% if match.is_locked %}
+                <span class="inline-flex items-center bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider">
+                    🔒 Match Locked
+                </span>
+                <span class="block text-gray-500 text-[10px] mt-1">Stakes are closed and revealed!</span>
+            {% else %}
+                <span class="inline-flex items-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider animate-pulse">
+                    🔓 Open for Stakes
+                </span>
+                <span class="block text-gray-400 text-[10px] mt-1">Stakes close on {{ match.match_datetime|date:"M d, h:i A" }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MAIN BODY -->
+    
+    {% if not match.is_locked %}
+        <!-- UNLOCKED VIEW: Place/Modify Stakes -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            
+            <!-- Left 2 Cols: Predictions Markets List -->
+            <div class="lg:col-span-2 space-y-4">
+                <h2 class="text-lg font-bold font-outfit text-white flex items-center mb-4">
+                    🎰 Prediction Markets
+                </h2>
+                
+                {% for market_code, market_name in multipliers.items %}
+                    {% with pred=pred_map|get_item:market_code %}
+                        <div class="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-hover relative">
+                            
+                            <!-- Left Info -->
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-indigo-500/10 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-indigo-500/20">
+                                        {{ market_code|multiply:10|stringformat:".0f"|default:market_code|replace:"pom,Player of the Match"|replace:"winner,Match Winner"|replace:"toss,Toss Winner"|replace:"top_batter,Top Batter"|replace:"top_bowler,Top Bowler" }}
+                                    </span>
+                                    <span class="text-xs text-gray-500 font-bold">Multiplier: {{ market_name }}x</span>
+                                </div>
+                                
+                                {% if pred %}
+                                    <div class="pt-2">
+                                        <span class="text-xs text-gray-500">Your Prediction:</span>
+                                        <div class="text-sm font-bold text-white flex items-center mt-0.5">
+                                            {% if market_code == 'winner' or market_code == 'toss' %}
+                                                {% if pred.selected_value == str_team_a_id or pred.selected_value == match.team_a.id|stringformat:"s" %}
+                                                    🏏 {{ match.team_a.name }}
+                                                {% else %}
+                                                    🏏 {{ match.team_b.name }}
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- We will render the name correctly or simple fallback -->
+                                                👤 {{ pred.selected_value|replace:"player_," }} <!-- We can match in JS or just let it show selection -->
+                                                <!-- In views.py we can pass resolved options for lookup, but displaying general details is simple -->
+                                            {% endif %}
+                                        </div>
+                                        <span class="text-xs text-gray-400 mt-1 block">
+                                            Staked <strong class="text-emerald-400">{{ pred.bet_amount }} Coins</strong> 
+                                            | Potential Payout: <strong class="text-amber-400">{{ pred.bet_amount|multiply:pred.multiplier|floatformat:0 }} Coins</strong>
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <div class="pt-2 text-xs text-gray-600 font-medium">
+                                        No active stake placed on this market yet.
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Right Action Button -->
+                            <div class="sm:text-right pt-2 sm:pt-0">
+                                <button onclick="openStakeDrawer('{{ market_code }}', '{{ market_name }}', '{{ pred.selected_value|default:"" }}', '{{ pred.bet_amount|default:"" }}', '{{ pred.confidence_level|default:"" }}')" 
+                                        class="w-full sm:w-auto bg-indigo-600/10 hover:bg-indigo-600 hover:text-white border border-indigo-500/20 hover:border-indigo-500 text-indigo-400 font-bold px-6 py-2.5 rounded-xl text-sm transition">
+                                    {% if pred %}Modify Prediction{% else %}Place Prediction{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <!-- Right 1 Col: Floating Form Drawer (Toggled by JS) -->
+            <div id="stake-drawer" class="glass-panel p-6 rounded-2xl border border-white/10 shadow-2xl space-y-6 hidden sticky top-28">
+                <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h3 id="drawer-title" class="text-lg font-bold font-outfit text-white">Place Prediction</h3>
+                    <button onclick="closeStakeDrawer()" class="text-gray-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form method="POST" id="drawer-form" class="space-y-5">
+                    {% csrf_token %}
+                    <input type="hidden" name="market_type" id="form-market-type">
+                    
+                    <!-- Selection Options -->
+                    <div>
+                        <label for="form-selection" class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Select Option</label>
+                        <select name="selected_value" id="form-selection" required
+                                class="w-full bg-obsidian-950/80 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-white focus:outline-none transition">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Bet Amount -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="form-bet" class="block text-xs uppercase tracking-wider text-gray-500 font-bold">Bet Amount (CricCoins)</label>
+                            <span class="text-xs text-gray-400">Wallet: <strong class="text-emerald-400">{{ profile.coin_balance }} Coins</strong></span>
+                        </div>
+                        <input type="number" name="bet_amount" id="form-bet" required min="1" max="{{ profile.coin_balance }}"
+                               class="w-full bg-obsidian-950/80 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-white focus:outline-none transition text-lg font-bold font-outfit"
+                               placeholder="Enter coins amount" oninput="updatePayout()">
+                        <!-- Quick Bet Buttons -->
+                        <div class="grid grid-cols-4 gap-2 mt-2">
+                            <button type="button" onclick="adjustCoins(50)" class="bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg py-1 text-xs font-bold text-gray-300 transition">+50</button>
+                            <button type="button" onclick="adjustCoins(100)" class="bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg py-1 text-xs font-bold text-gray-300 transition">+100</button>
+                            <button type="button" onclick="adjustCoins(200)" class="bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg py-1 text-xs font-bold text-gray-300 transition">+200</button>
+                            <button type="button" onclick="adjustCoins('max')" class="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg py-1 text-xs font-black transition">MAX</button>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Level -->
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-2">Confidence Level (Optional)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="confidence_level" value="low" class="sr-only peer">
+                                <div class="bg-white/5 border border-white/5 hover:bg-white/10 text-gray-400 peer-checked:bg-indigo-500/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 rounded-xl py-2 text-center text-xs font-bold transition">
+                                    Low
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="confidence_level" value="medium" class="sr-only peer" checked>
+                                <div class="bg-white/5 border border-white/5 hover:bg-white/10 text-gray-400 peer-checked:bg-indigo-500/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 rounded-xl py-2 text-center text-xs font-bold transition">
+                                    Medium
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="confidence_level" value="high" class="sr-only peer">
+                                <div class="bg-white/5 border border-white/5 hover:bg-white/10 text-gray-400 peer-checked:bg-indigo-500/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 rounded-xl py-2 text-center text-xs font-bold transition">
+                                    High
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Live Payout Display -->
+                    <div class="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl flex items-center justify-between text-xs sm:text-sm">
+                        <div>
+                            <span class="block text-[10px] uppercase font-bold text-indigo-400">Multiplier Selected</span>
+                            <span id="form-multi-display" class="text-base font-black text-white font-outfit">1.5x</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-[10px] uppercase font-bold text-indigo-400">Potential Payout</span>
+                            <span id="form-payout-display" class="text-lg font-black text-amber-400 font-outfit">0 Coins</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm button -->
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold py-3.5 rounded-xl transition duration-200 neon-glow-indigo border border-indigo-500">
+                        Confirm Prediction
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- LOCKED VIEW: Head-to-Head Revelations Matrix -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold font-outfit text-white flex items-center">
+                📊 Head-to-Head Comparison Matrix
+            </h2>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-obsidian-950/60 text-gray-400 font-bold border-b border-white/5">
+                                <th class="px-6 py-4">Friend</th>
+                                {% for market in active_markets %}
+                                    <th class="px-6 py-4 text-center">{{ market.name }} ({{ market.mult }})</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            {% for member, preds in user_pred_matrix.items %}
+                                <tr class="hover:bg-white/5 transition {% if member == request.user %}bg-indigo-500/5{% endif %}">
+                                    <!-- Member Username -->
+                                    <td class="px-6 py-4 font-bold text-white">
+                                        <a href="{% url 'user_profile' member.username %}" class="hover:underline">{{ member.username }}</a>
+                                    </td>
+                                    
+                                    <!-- Loop through active markets only (dynamic, room-configured) -->
+                                    {% for market in active_markets %}
+                                        {% with pred=preds|get_item:market.code %}
+                                            <td class="px-6 py-4 text-center">
+                                                {% if pred %}
+                                                    <div class="inline-block p-2 rounded-xl text-center min-w-[120px] 
+                                                        {% if pred.status == 'won' %}bg-emerald-500/10 border border-emerald-500/20 text-emerald-400
+                                                        {% elif pred.status == 'lost' %}bg-rose-500/10 border border-rose-500/20 text-rose-400
+                                                        {% elif pred.status == 'refunded' %}bg-gray-500/10 border border-gray-500/20 text-gray-400
+                                                        {% else %}bg-indigo-500/5 border border-white/5 text-gray-300{% endif %}">
+                                                        
+                                                        <span class="block font-bold tracking-tight text-xs">
+                                                            {{ resolved_names|get_item:pred.selected_value|default:pred.selected_value }}
+                                                        </span>
+                                                        <span class="block text-[10px] text-gray-500 font-medium mt-0.5">
+                                                            Stake: {{ pred.bet_amount }}
+                                                        </span>
+                                                        
+                                                        {% if pred.status == 'won' %}
+                                                            <span class="block text-[9px] font-black uppercase text-emerald-400 mt-1">✓ +{{ pred.coins_change }} Won</span>
+                                                        {% elif pred.status == 'lost' %}
+                                                            <span class="block text-[9px] font-black uppercase text-rose-500 mt-1">✗ -{{ pred.bet_amount }} Lost</span>
+                                                        {% elif pred.status == 'refunded' %}
+                                                            <span class="block text-[9px] font-black uppercase text-gray-500 mt-1">⟲ Refunded</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-gray-600 text-xs font-semibold">No Bet</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endwith %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- Dropdown Selections & Adjustment scripts -->
+<script>
+    // Selections lists
+    const teams = [
+        { id: "{{ match.team_a.id }}", name: "🏏 {{ match.team_a.name }} ({{ match.team_a.short_name }})" },
+        { id: "{{ match.team_b.id }}", name: "🏏 {{ match.team_b.name }} ({{ match.team_b.short_name }})" }
+    ];
+
+    const players = [
+        {% for p in all_players %}
+            { id: "{{ p.id }}", name: "👤 {{ p.name }} ({{ p.team.short_name }})" },
+        {% endfor %}
+    ];
+
+    let currentMultiplier = 1.5;
+    const walletBalance = parseInt("{{ profile.coin_balance }}");
+
+    function openStakeDrawer(marketCode, multiplier, selectedValue, betAmount, confidenceLevel) {
+        currentMultiplier = parseFloat(multiplier);
+        
+        // Show drawer
+        document.getElementById('stake-drawer').classList.remove('hidden');
+        document.getElementById('form-market-type').value = marketCode;
+        
+        // Setup title
+        let prettyName = marketCode.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        if(marketCode === 'pom') prettyName = "Player of the Match";
+        document.getElementById('drawer-title').innerText = "Stake: " + prettyName;
+        document.getElementById('form-multi-display').innerText = multiplier + "x";
+
+        // Setup Options dropdown
+        const selectElement = document.getElementById('form-selection');
+        selectElement.innerHTML = ''; // reset
+
+        let optionList = [];
+        if (marketCode === 'winner' || marketCode === 'toss') {
+            optionList = teams;
+        } else {
+            optionList = players;
+        }
+
+        optionList.forEach(opt => {
+            const el = document.createElement('option');
+            el.value = opt.id;
+            el.textContent = opt.name;
+            if (selectedValue && String(opt.id) === String(selectedValue)) {
+                el.selected = true;
+            }
+            selectElement.appendChild(el);
+        });
+
+        // Setup Bet amount and confidence
+        const betInput = document.getElementById('form-bet');
+        if (betAmount) {
+            // Deducted coins need to be factored in for available pool inside views,
+            // but for UI safety let's allow inputs based on the available coins.
+            const existingBet = parseInt(betAmount);
+            betInput.value = existingBet;
+            betInput.max = walletBalance + existingBet;
+        } else {
+            betInput.value = '';
+            betInput.max = walletBalance;
+        }
+
+        // Set Confidence levels
+        if (confidenceLevel) {
+            document.querySelectorAll('input[name="confidence_level"]').forEach(radio => {
+                if (radio.value === confidenceLevel) {
+                    radio.checked = true;
+                }
+            });
+        }
+
+        updatePayout();
+    }
+
+    function closeStakeDrawer() {
+        document.getElementById('stake-drawer').classList.add('hidden');
+    }
+
+    function adjustCoins(amt) {
+        const betInput = document.getElementById('form-bet');
+        const maxLimit = parseInt(betInput.max) || walletBalance;
+        
+        if (amt === 'max') {
+            betInput.value = maxLimit;
+        } else {
+            let cur = parseInt(betInput.value) || 0;
+            let target = cur + amt;
+            if (target > maxLimit) target = maxLimit;
+            betInput.value = target;
+        }
+        updatePayout();
+    }
+
+    function updatePayout() {
+        const betAmount = parseInt(document.getElementById('form-bet').value) || 0;
+        const payout = Math.round(betAmount * currentMultiplier);
+        document.getElementById('form-payout-display').innerText = payout.toLocaleString() + " Coins";
+    }
+</script>
+{% endblock %}

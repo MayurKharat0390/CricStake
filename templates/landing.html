@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}CricStake - Predict IPL Matches & Compete with Friends{% endblock %}
+
+{% block content %}
+<div class="py-8 md:py-16 flex flex-col lg:flex-row items-center justify-between gap-12">
+    <!-- Hero Copy Column -->
+    <div class="flex-1 space-y-6 text-center lg:text-left">
+        <div class="inline-flex items-center space-x-2 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-1.5 rounded-full text-indigo-400 font-bold text-xs tracking-wider uppercase">
+            ⚡ Premium IPL Prediction Leagues
+        </div>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-black font-outfit tracking-tight leading-none text-white">
+            Predict IPL Matches.<br>
+            Compete with <span class="bg-gradient-to-r from-indigo-400 via-indigo-500 to-emerald-400 bg-clip-text text-transparent">Friends</span>.<br>
+            Claim the Crown.
+        </h1>
+        <p class="text-gray-400 text-base md:text-lg font-normal max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            Create custom rooms, invite your friends, and stake virtual **CricCoins** on match winners, toss results, and player outcomes. Pure prediction thrill, 100% free, 0% real money.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+            <a href="{% url 'register' %}" class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black px-8 py-4 rounded-xl text-center shadow-lg transition duration-200 neon-glow-indigo border border-indigo-500 hover:scale-[1.02] transform">
+                Claim 1,000 Free Coins
+            </a>
+            <a href="{% url 'login' %}" class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-4 rounded-xl text-center transition duration-200 hover:scale-[1.02] transform">
+                Log In to Play
+            </a>
+        </div>
+    </div>
+
+    <!-- Premium Interactive Match Predictor Mockup Card -->
+    <div class="flex-1 w-full max-w-lg lg:max-w-none flex justify-center items-center relative">
+        <!-- Radial glow elements -->
+        <div class="absolute -top-12 -left-12 w-64 h-64 bg-indigo-500/10 rounded-full filter blur-3xl opacity-50 animate-pulse"></div>
+        <div class="absolute -bottom-12 -right-12 w-64 h-64 bg-emerald-500/10 rounded-full filter blur-3xl opacity-40 animate-pulse"></div>
+
+        <!-- The Mockup Card itself -->
+        <div class="w-full glass-panel rounded-3xl p-6 md:p-8 shadow-2xl relative border border-white/10 overflow-hidden floating-element">
+            <!-- Glass Overlay Accent -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none"></div>
+
+            <!-- Card Header -->
+            <div class="flex items-center justify-between mb-6">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    🏆 IPL Matchday 38
+                </span>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
+                    ⏱️ Locks in 2h 15m
+                </span>
+            </div>
+
+            <!-- Matchup Section -->
+            <div class="flex items-center justify-between gap-4 bg-obsidian-950/40 border border-white/5 p-4 rounded-2xl mb-6">
+                <!-- Team A: MI -->
+                <div class="flex-1 flex flex-col items-center">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-900 rounded-xl flex items-center justify-center border border-blue-400/30 shadow-lg mb-2">
+                        <!-- Tornado Graphic / MI SVG representation -->
+                        <svg class="w-8 h-8 text-white drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                    </div>
+                    <span class="font-outfit font-black text-white text-base">MI</span>
+                    <span class="text-gray-500 text-xxs font-semibold uppercase">Mumbai</span>
+                </div>
+
+                <!-- Match Separator -->
+                <div class="flex flex-col items-center justify-center">
+                    <div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                        <span class="text-xs font-black font-outfit text-gray-400">VS</span>
+                    </div>
+                </div>
+
+                <!-- Team B: CSK -->
+                <div class="flex-1 flex flex-col items-center">
+                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-amber-700 rounded-xl flex items-center justify-center border border-yellow-400/30 shadow-lg mb-2">
+                        <!-- Lion/Shield Representation -->
+                        <svg class="w-8 h-8 text-white drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <span class="font-outfit font-black text-white text-base">CSK</span>
+                    <span class="text-gray-500 text-xxs font-semibold uppercase">Chennai</span>
+                </div>
+            </div>
+
+            <!-- Market Selector Tab Buttons -->
+            <div class="mb-6">
+                <label class="block text-xxs uppercase tracking-wider text-gray-500 font-bold mb-2.5">Choose Prediction Market</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 py-2 px-1 rounded-xl text-xs font-bold text-center">
+                        Winner
+                    </button>
+                    <button class="bg-white/5 border border-white/5 text-gray-400 py-2 px-1 rounded-xl text-xs font-semibold text-center hover:bg-white/10 transition">
+                        Toss
+                    </button>
+                    <button class="bg-white/5 border border-white/5 text-gray-400 py-2 px-1 rounded-xl text-xs font-semibold text-center hover:bg-white/10 transition">
+                        POM
+                    </button>
+                </div>
+            </div>
+
+            <!-- Outcome Selection -->
+            <div class="mb-6">
+                <label class="block text-xxs uppercase tracking-wider text-gray-500 font-bold mb-2">Select Your Prediction</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="flex items-center justify-between bg-indigo-600 border border-indigo-400/40 text-white p-3.5 rounded-xl text-sm font-bold shadow-md transition duration-200">
+                        <span>Mumbai Indians</span>
+                        <span class="bg-white/20 text-white text-xs px-2 py-0.5 rounded-md font-bold">1.8x</span>
+                    </button>
+                    <button class="flex items-center justify-between bg-white/5 border border-white/5 text-gray-400 p-3.5 rounded-xl text-sm font-semibold transition hover:bg-white/10">
+                        <span>Chennai Super K.</span>
+                        <span class="bg-white/5 text-gray-500 text-xs px-2 py-0.5 rounded-md font-bold">1.9x</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bet Amount Slider -->
+            <div class="mb-6 bg-obsidian-950/40 border border-white/5 p-4 rounded-2xl">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xxs uppercase tracking-wider text-gray-500 font-bold">Your Stake</span>
+                    <span class="text-indigo-400 font-black font-outfit text-sm">250 CricCoins</span>
+                </div>
+                <!-- Sliding bar representation -->
+                <div class="relative h-2 bg-white/5 rounded-full mb-3 border border-white/5">
+                    <div class="absolute left-0 top-0 h-full w-[45%] bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"></div>
+                    <div class="absolute left-[45%] top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-indigo-500"></div>
+                </div>
+                <div class="flex items-center justify-between text-xxs font-bold text-gray-500">
+                    <span>Min: 50</span>
+                    <span class="text-emerald-400 font-outfit text-xs">Est. Payout: 450 Coins 💸</span>
+                    <span>Max: 1000</span>
+                </div>
+            </div>
+
+            <!-- Final Button -->
+            <button class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-black py-4 rounded-2xl transition duration-200 border border-indigo-500 neon-glow-indigo text-sm uppercase tracking-wider hover:opacity-90">
+                Confirm Prediction
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Refined 3-Step Information Flow -->
+<div class="py-12 border-t border-white/5 mt-8">
+    <div class="text-center mb-12">
+        <h2 class="text-2xl sm:text-3xl font-black font-outfit text-white mb-2">Compete in 3 Simple Steps</h2>
+        <p class="text-gray-400 text-sm max-w-md mx-auto">Skip the complexity. Join private tournaments, predict matches, and climb the ranks with friends.</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Step 1 -->
+        <div class="glass-panel p-6 rounded-2xl text-center md:text-left relative border border-white/5 group hover:border-indigo-500/20 transition duration-300">
+            <div class="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-black font-outfit text-sm mb-4 mx-auto md:mx-0">
+                01
+            </div>
+            <h3 class="text-lg font-bold font-outfit text-white mb-2">Create private room</h3>
+            <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                Generate a unique invite code to launch your custom room and invite friends to compete in your private prediction league.
+            </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="glass-panel p-6 rounded-2xl text-center md:text-left relative border border-white/5 group hover:border-emerald-500/20 transition duration-300">
+            <div class="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-black font-outfit text-sm mb-4 mx-auto md:mx-0">
+                02
+            </div>
+            <h3 class="text-lg font-bold font-outfit text-white mb-2">Stake virtual coins</h3>
+            <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                Wager simulated coins on Match winner, Toss winner, Player of the Match, Top Batter, and Top Bowler with custom multipliers.
+            </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="glass-panel p-6 rounded-2xl text-center md:text-left relative border border-white/5 group hover:border-amber-500/20 transition duration-300">
+            <div class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-400 font-black font-outfit text-sm mb-4 mx-auto md:mx-0">
+                03
+            </div>
+            <h3 class="text-lg font-bold font-outfit text-white mb-2">Climb the leaderboard</h3>
+            <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                Enjoy automated settlements, track stats, build winning streaks, unlock hidden badges, and see who reigns supreme!
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }}'s Profile - CricStake{% endblock %}
+
+{% block content %}
+{% load cricstake_filters %}
+<div class="space-y-10">
+    
+    <!-- User Profile Header -->
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col sm:flex-row items-center gap-6 border-b border-indigo-500/20">
+        <!-- Glowing Accent -->
+        <div class="absolute -top-12 -left-12 w-32 h-32 bg-indigo-500/10 rounded-full filter blur-2xl"></div>
+        
+        <!-- Large visual Avatar -->
+        <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-emerald-500 text-white font-black font-outfit text-4xl rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 relative group">
+            {{ profile_user.username|slice:":1"|upper }}
+            <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition rounded-2xl"></div>
+        </div>
+
+        <!-- User Meta Info -->
+        <div class="space-y-1.5 text-center sm:text-left flex-grow">
+            <h1 class="text-3xl font-black font-outfit text-white tracking-tight flex flex-col sm:flex-row items-center gap-2.5">
+                {{ profile_user.username }}
+                {% if is_own_profile %}
+                    <span class="bg-indigo-500/20 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-indigo-500/20 tracking-normal uppercase">Your Profile</span>
+                {% endif %}
+            </h1>
+            <p class="text-gray-400 text-sm">Joined CricStake on {{ profile_user.date_joined|date:"F d, Y" }}</p>
+        </div>
+
+        <!-- Wallet Counter -->
+        <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 px-6 rounded-2xl text-center">
+            <span class="block text-[10px] uppercase tracking-wider text-emerald-500 font-bold mb-1">CricCoins</span>
+            <span class="text-2xl font-black font-outfit text-white tracking-wide flex items-center justify-center">
+                🪙 {{ profile.coin_balance }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Career Statistics Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="glass-panel p-5 rounded-2xl text-center border border-white/5">
+            <span class="block text-gray-500 text-xs uppercase font-bold mb-1">Accuracy</span>
+            <span class="text-2xl font-black text-white font-outfit">{{ profile.accuracy_percentage }}%</span>
+            <div class="w-full bg-white/5 rounded-full h-1 mt-2 overflow-hidden max-w-[100px] mx-auto">
+                <div class="bg-indigo-500 h-1" style="width: {{ profile.accuracy_percentage }}%"></div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl text-center border border-white/5">
+            <span class="block text-gray-500 text-xs uppercase font-bold mb-1">Highest Streak</span>
+            <span class="text-2xl font-black text-amber-500 font-outfit flex items-center justify-center">
+                {{ profile.longest_streak }} <span class="text-lg ml-0.5">🔥</span>
+            </span>
+            <span class="block text-[10px] text-gray-500 mt-1">Current: {{ profile.current_streak }}</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl text-center border border-white/5">
+            <span class="block text-gray-500 text-xs uppercase font-bold mb-1">Stakes Placed</span>
+            <span class="text-2xl font-black text-white font-outfit">{{ profile.total_predictions }}</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl text-center border border-white/5">
+            <span class="block text-gray-500 text-xs uppercase font-bold mb-1">Predictions Won</span>
+            <span class="text-2xl font-black text-emerald-400 font-outfit">{{ profile.correct_predictions }}</span>
+        </div>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Left 2 Cols: Shiny Badge Gallery -->
+        <div class="lg:col-span-2 space-y-6">
+            <h2 class="text-2xl font-bold font-outfit text-white flex items-center">
+                🏆 Badge Gallery
+            </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {% block badge_checks %}
+                    <!-- 1. First Win Badge -->
+                    <div class="p-6 rounded-2xl flex items-start space-x-4 relative group transition duration-300
+                        {% if earned_badges|has_badge:'First Win' or profile.correct_predictions >= 1 %}
+                            glass-panel border-amber-500/30 bg-amber-500/5 text-white shadow-lg shadow-amber-500/5
+                        {% else %}
+                            glass-panel border-white/5 opacity-40 bg-obsidian-950/40 text-gray-500
+                        {% endif %}">
+                        <span class="text-4xl filter {% if earned_badges|has_badge:'First Win' or profile.correct_predictions >= 1 %}drop-shadow-[0_4px_8px_rgba(245,158,11,0.3)]{% else %}grayscale{% endif %}">🏆</span>
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-white text-base">First Win</h3>
+                                {% if not earned_badges|has_badge:'First Win' and profile.correct_predictions < 1 %}
+                                    <span class="text-xs">🔒</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-xs leading-relaxed">Awarded for your first correct prediction!</p>
+                            <span class="block text-[9px] uppercase font-bold text-indigo-400 pt-1">
+                                {% if earned_badges|has_badge:'First Win' or profile.correct_predictions >= 1 %}Unlocked{% else %}1 Correct Prediction Required{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 2. 3-Match Streak Badge -->
+                    <div class="p-6 rounded-2xl flex items-start space-x-4 relative group transition duration-300
+                        {% if earned_badges|has_badge:'3-Match Streak' or profile.longest_streak >= 3 %}
+                            glass-panel border-amber-500/30 bg-amber-500/5 text-white shadow-lg shadow-amber-500/5
+                        {% else %}
+                            glass-panel border-white/5 opacity-40 bg-obsidian-950/40 text-gray-500
+                        {% endif %}">
+                        <span class="text-4xl filter {% if earned_badges|has_badge:'3-Match Streak' or profile.longest_streak >= 3 %}drop-shadow-[0_4px_8px_rgba(245,158,11,0.3)]{% else %}grayscale{% endif %}">🔥</span>
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-white text-base">3-Match Streak</h3>
+                                {% if not earned_badges|has_badge:'3-Match Streak' and profile.longest_streak < 3 %}
+                                    <span class="text-xs">🔒</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-xs leading-relaxed">Awarded for getting 3 correct predictions in a row!</p>
+                            <span class="block text-[9px] uppercase font-bold text-indigo-400 pt-1">
+                                {% if earned_badges|has_badge:'3-Match Streak' or profile.longest_streak >= 3 %}Unlocked{% else %}3 Win Streak Required (Best: {{ profile.longest_streak }}){% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Top Predictor Badge -->
+                    <div class="p-6 rounded-2xl flex items-start space-x-4 relative group transition duration-300
+                        {% if earned_badges|has_badge:'Top Predictor' or profile.correct_predictions >= 10 %}
+                            glass-panel border-amber-500/30 bg-amber-500/5 text-white shadow-lg shadow-amber-500/5
+                        {% else %}
+                            glass-panel border-white/5 opacity-40 bg-obsidian-950/40 text-gray-500
+                        {% endif %}">
+                        <span class="text-4xl filter {% if earned_badges|has_badge:'Top Predictor' or profile.correct_predictions >= 10 %}drop-shadow-[0_4px_8px_rgba(245,158,11,0.3)]{% else %}grayscale{% endif %}">⚡</span>
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-white text-base">Top Predictor</h3>
+                                {% if not earned_badges|has_badge:'Top Predictor' and profile.correct_predictions < 10 %}
+                                    <span class="text-xs">🔒</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-xs leading-relaxed">Awarded for reaching 10 correct predictions!</p>
+                            <span class="block text-[9px] uppercase font-bold text-indigo-400 pt-1">
+                                {% if earned_badges|has_badge:'Top Predictor' or profile.correct_predictions >= 10 %}Unlocked{% else %}10 Correct Predictions (Progress: {{ profile.correct_predictions }}/10){% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Weekly Champion Badge -->
+                    <div class="p-6 rounded-2xl flex items-start space-x-4 relative group transition duration-300
+                        {% if earned_badges|has_badge:'Weekly Champion' or profile_user.weekly_championships.exists %}
+                            glass-panel border-amber-500/30 bg-amber-500/5 text-white shadow-lg shadow-amber-500/5
+                        {% else %}
+                            glass-panel border-white/5 opacity-40 bg-obsidian-950/40 text-gray-500
+                        {% endif %}">
+                        <span class="text-4xl filter {% if earned_badges|has_badge:'Weekly Champion' or profile_user.weekly_championships.exists %}drop-shadow-[0_4px_8px_rgba(245,158,11,0.3)]{% else %}grayscale{% endif %}">👑</span>
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-white text-base">Weekly Champion</h3>
+                                {% if not earned_badges|has_badge:'Weekly Champion' and not profile_user.weekly_championships.exists %}
+                                    <span class="text-xs">🔒</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-xs leading-relaxed">Awarded for dominating a room leaderboard as the Weekly Champion!</p>
+                            <span class="block text-[9px] uppercase font-bold text-indigo-400 pt-1">
+                                {% if earned_badges|has_badge:'Weekly Champion' or profile_user.weekly_championships.exists %}Unlocked (Count: {{ profile_user.weekly_championships.count }}){% else %}Win Room Weekly Championship{% endif %}
+                            </span>
+                        </div>
+                {% endblock %}
+            </div>
+        </div>
+
+        <!-- Right 1 Col: Recent Predictions Timeline -->
+        <div class="space-y-6">
+            <h2 class="text-2xl font-bold font-outfit text-white flex items-center">
+                ⏳ Prediction History
+            </h2>
+
+            <div class="space-y-4">
+                {% if settled_predictions %}
+                    {% for pred in settled_predictions %}
+                        <div class="glass-panel p-5 rounded-2xl space-y-3 border border-white/5 text-xs">
+                            <!-- Match Name -->
+                            <div class="flex justify-between items-center text-gray-500 font-medium">
+                                <span>{{ pred.match.team_a.short_name }} vs {{ pred.match.team_b.short_name }}</span>
+                                <span>{{ pred.match.match_datetime|date:"M d" }}</span>
+                            </div>
+                            
+                            <!-- Prediction selection -->
+                            <div class="flex justify-between items-center py-1">
+                                <div>
+                                    <span class="block text-[10px] text-gray-500 uppercase font-bold">Prediction</span>
+                                    <span class="font-bold text-white text-sm mt-0.5">
+                                        {{ pred.get_market_type_display }}:
+                                    </span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block text-[10px] text-gray-500 uppercase font-bold">Staked</span>
+                                    <span class="font-bold text-gray-300">{{ pred.bet_amount }} Coins</span>
+                                </div>
+                            </div>
+
+                            <!-- Payout Outcome -->
+                            <div class="pt-2 border-t border-white/5 flex items-center justify-between">
+                                <span class="text-gray-500">Room: <strong>{{ pred.room.name }}</strong></span>
+                                {% if pred.status == 'won' %}
+                                    <span class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+                                        ✓ +{{ pred.coins_change }} Won
+                                    </span>
+                                {% elif pred.status == 'lost' %}
+                                    <span class="bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+                                        ✗ -{{ pred.bet_amount }} Lost
+                                    </span>
+                                {% else %}
+                                    <span class="bg-gray-500/10 border border-gray-500/20 text-gray-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+                                        ⟲ Refunded
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="glass-panel p-6 rounded-2xl text-center text-gray-500">
+                        No settled predictions in history.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

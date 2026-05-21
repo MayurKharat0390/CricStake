@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - CricStake{% endblock %}
+
+{% block content %}
+{% load cricstake_filters %}
+<div class="space-y-10">
+    <!-- Header Summary Block -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Coin Wallet Card -->
+        <div class="glass-panel p-6 rounded-2xl relative overflow-hidden flex items-center justify-between border-l-4 border-emerald-500">
+            <div>
+                <span class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">CricCoin Wallet</span>
+                <span class="text-3xl font-black font-outfit text-white tracking-wide flex items-center">
+                    {{ profile.coin_balance }}
+                    <span class="text-emerald-400 text-xs font-bold font-sans ml-2 bg-emerald-500/10 px-2 py-0.5 rounded-full">Virtual</span>
+                </span>
+            </div>
+            <div class="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 text-2xl font-bold">
+                🪙
+            </div>
+        </div>
+
+        <!-- Accuracy Card -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
+            <div>
+                <span class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">Prediction Accuracy</span>
+                <span class="text-3xl font-black font-outfit text-white tracking-wide">{{ profile.accuracy_percentage }}%</span>
+                <!-- Custom mini progress bar -->
+                <div class="w-full bg-white/5 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: {{ profile.accuracy_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hot Streak Card -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-amber-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">Current Streak</span>
+                    <span class="text-3xl font-black font-outfit text-white tracking-wide flex items-center">
+                        {{ profile.current_streak }} 
+                        <span class="text-amber-500 text-lg ml-1">🔥</span>
+                    </span>
+                    <span class="block text-xs text-gray-400 mt-1">Record: {{ profile.longest_streak }} matches</span>
+                </div>
+                <div class="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center text-amber-500 text-xl font-bold">
+                    🔥
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Bets Card -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-indigo-400">
+            <div>
+                <span class="block text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">Predictions Placed</span>
+                <span class="text-3xl font-black font-outfit text-white tracking-wide">{{ profile.total_predictions }}</span>
+                <span class="block text-xs text-gray-400 mt-1">Won: {{ profile.correct_predictions }} | Lost: {{ profile.total_predictions|subtract:profile.correct_predictions|floatformat:0 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Left 2 Cols: My Rooms -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold font-outfit text-white flex items-center">
+                    <span class="mr-2">🛡️</span> Private Rooms
+                </h2>
+                <div class="flex space-x-2">
+                    <a href="{% url 'room_join' %}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">
+                        Join Room
+                    </a>
+                    <a href="{% url 'room_create' %}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition neon-glow-indigo border border-indigo-500">
+                        Create Room
+                    </a>
+                </div>
+            </div>
+
+            <!-- Rooms List -->
+            <div class="space-y-4">
+                {% if rooms %}
+                    {% for room in rooms %}
+                        <div class="glass-panel p-6 rounded-2xl glass-card-hover flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <h3 class="text-lg font-bold font-outfit text-white hover:text-indigo-400 transition">
+                                    <a href="{% url 'room_detail' room.id %}">{{ room.name }}</a>
+                                </h3>
+                                <p class="text-gray-400 text-xs sm:text-sm max-w-lg leading-relaxed">
+                                    {{ room.description|default:"No description provided for this room."|truncatechars:120 }}
+                                </p>
+                                <div class="flex items-center space-x-4 text-xs text-gray-500 pt-1">
+                                    <span class="flex items-center"><span class="mr-1">👑</span> Admin: {{ room.created_by.username }}</span>
+                                    <span class="flex items-center"><span class="mr-1">🔑</span> Code: 
+                                        <code class="bg-white/5 text-gray-300 font-mono px-1.5 py-0.5 rounded font-bold uppercase ml-1 tracking-wider border border-white/5">{{ room.invite_code }}</code>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="w-full sm:w-auto">
+                                <a href="{% url 'room_detail' room.id %}" class="w-full sm:w-auto block text-center bg-indigo-600/10 hover:bg-indigo-600 hover:text-white border border-indigo-500/20 hover:border-indigo-500 text-indigo-400 font-bold px-6 py-2.5 rounded-xl text-sm transition">
+                                    Enter Room
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="glass-panel p-10 rounded-2xl text-center space-y-4">
+                        <div class="text-5xl">🏏</div>
+                        <h3 class="text-xl font-bold font-outfit text-white">No Rooms Joined Yet</h3>
+                        <p class="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
+                            CricStake is best enjoyed when competing against friends! Create a private room or enter an invite code to join one.
+                        </p>
+                        <div class="flex items-center justify-center space-x-4 pt-2">
+                            <a href="{% url 'room_join' %}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
+                                Join a Room
+                            </a>
+                            <a href="{% url 'room_create' %}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition neon-glow-indigo border border-indigo-500">
+                                Create Room
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right 1 Col: Active Predictions -->
+        <div class="space-y-6">
+            <h2 class="text-2xl font-bold font-outfit text-white flex items-center">
+                <span class="mr-2">⏳</span> Active Stakes
+            </h2>
+
+            <div class="space-y-4">
+                {% if active_predictions %}
+                    {% for pred in active_predictions %}
+                        <div class="glass-panel p-5 rounded-2xl space-y-4 border border-white/5 relative overflow-hidden">
+                            <!-- Match Header -->
+                            <div class="flex items-center justify-between text-xs pb-2 border-b border-white/5">
+                                <span class="font-bold text-indigo-400 uppercase tracking-wider">IPL {{ pred.match.match_datetime|date:"Y" }}</span>
+                                <span class="text-gray-500">{{ pred.match.match_datetime|date:"M d, P" }}</span>
+                            </div>
+                            
+                            <!-- Teams -->
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-semibold text-white">{{ pred.match.team_a.short_name }} vs {{ pred.match.team_b.short_name }}</span>
+                                <span class="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20 font-bold uppercase">{{ pred.confidence_level|default:"Medium" }}</span>
+                            </div>
+
+                            <!-- Bet Metrics -->
+                            <div class="grid grid-cols-2 gap-4 bg-obsidian-950/40 p-3 rounded-xl border border-white/5 text-xs">
+                                <div>
+                                    <span class="block text-gray-500">Market</span>
+                                    <span class="font-bold text-gray-300">{{ pred.get_market_type_display }}</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500">Multiplier</span>
+                                    <span class="font-bold text-indigo-400">{{ pred.multiplier }}x</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500">Stake Placed</span>
+                                    <span class="font-bold text-emerald-400">{{ pred.bet_amount }} Coins</span>
+                                </div>
+                                <div>
+                                    <span class="block text-gray-500">Est. Payout</span>
+                                    <!-- Use template multiply filter -->
+                                    <span class="font-bold text-amber-400">{{ pred.bet_amount|multiply:pred.multiplier|floatformat:0 }} Coins</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Edit Action -->
+                            <div class="pt-1">
+                                <a href="{% url 'match_predict' pred.room.id pred.match.id %}" class="block w-full text-center bg-white/5 hover:bg-indigo-600 hover:text-white border border-white/10 hover:border-indigo-500 text-gray-300 text-xs font-bold py-2 rounded-xl transition">
+                                    Edit Prediction
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Empty Predictions State -->
+                    <div class="glass-panel p-6 rounded-2xl text-center space-y-2">
+                        <span class="text-3xl block">🎰</span>
+                        <h4 class="text-sm font-bold text-gray-300">No Active Predictions</h4>
+                        <p class="text-gray-500 text-xs leading-relaxed">
+                            Once rooms are joined, place virtual coin predictions on upcoming matches to see them displayed here!
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

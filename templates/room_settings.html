@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - {{ room.name }} - CricStake{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-12">
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+        <!-- Glowing Accent -->
+        <div class="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full filter blur-xl"></div>
+        
+        <div class="mb-8 flex items-center space-x-3">
+            <a href="{% url 'room_detail' room.id %}" class="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white p-2 rounded-lg transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </a>
+            <div>
+                <h2 class="text-2xl font-black font-outfit text-white">Room Settings</h2>
+                <p class="text-gray-400 text-xs sm:text-sm">Manage prediction league parameters</p>
+            </div>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Room Name -->
+            <div>
+                <label for="name" class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Room Name</label>
+                <input type="text" name="name" id="name" required value="{{ room.name }}"
+                       class="w-full bg-obsidian-950/80 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none transition"
+                       placeholder="e.g. The Cricket Club, Hostel D Champions">
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Description (Optional)</label>
+                <textarea name="description" id="description" rows="3"
+                          class="w-full bg-obsidian-950/80 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none transition resize-none"
+                          placeholder="e.g. Predictions league for the IPL 2026 matches. Winner gets ultimate bragging rights!">{{ room.description }}</textarea>
+            </div>
+
+            <!-- Allowed Markets -->
+            <div class="space-y-3">
+                <label class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Enabled Prediction Markets</label>
+                <p class="text-[11px] text-gray-500 mb-3">Select the markets that room members can predict and bet on.</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-center space-x-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-3 cursor-pointer transition">
+                        <input type="checkbox" name="allow_winner_market" value="true" {% if room.allow_winner_market %}checked{% endif %}
+                               class="rounded bg-obsidian-950 border-white/10 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        <div class="flex flex-col">
+                            <span class="text-white text-xs font-bold">Match Winner</span>
+                            <span class="text-[10px] text-gray-400">1.5x Multiplier</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center space-x-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-3 cursor-pointer transition">
+                        <input type="checkbox" name="allow_toss_market" value="true" {% if room.allow_toss_market %}checked{% endif %}
+                               class="rounded bg-obsidian-950 border-white/10 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        <div class="flex flex-col">
+                            <span class="text-white text-xs font-bold">Toss Winner</span>
+                            <span class="text-[10px] text-gray-400">2.0x Multiplier</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center space-x-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-3 cursor-pointer transition">
+                        <input type="checkbox" name="allow_pom_market" value="true" {% if room.allow_pom_market %}checked{% endif %}
+                               class="rounded bg-obsidian-950 border-white/10 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        <div class="flex flex-col">
+                            <span class="text-white text-xs font-bold">Player of Match</span>
+                            <span class="text-[10px] text-gray-400">4.0x Multiplier</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center space-x-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-3 cursor-pointer transition">
+                        <input type="checkbox" name="allow_batter_market" value="true" {% if room.allow_batter_market %}checked{% endif %}
+                               class="rounded bg-obsidian-950 border-white/10 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        <div class="flex flex-col">
+                            <span class="text-white text-xs font-bold">Top Batter</span>
+                            <span class="text-[10px] text-gray-400">3.0x Multiplier</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center space-x-3 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-3 cursor-pointer transition sm:col-span-2">
+                        <input type="checkbox" name="allow_bowler_market" value="true" {% if room.allow_bowler_market %}checked{% endif %}
+                               class="rounded bg-obsidian-950 border-white/10 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        <div class="flex flex-col">
+                            <span class="text-white text-xs font-bold">Top Bowler</span>
+                            <span class="text-[10px] text-gray-400">3.0x Multiplier</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Notice Alert -->
+            <div class="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl text-xs text-indigo-400 leading-relaxed">
+                ⚠️ **Note:** Disabling prediction markets will immediately prevent any future bets on those categories. Already settled or active bets placed in the past will remain intact.
+            </div>
+
+            <!-- Submit & Actions -->
+            <div class="flex space-x-4">
+                <a href="{% url 'room_detail' room.id %}" 
+                   class="w-1/3 bg-white/5 hover:bg-white/10 text-white font-bold py-3.5 rounded-xl transition duration-200 border border-white/10 text-center flex items-center justify-center">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="w-2/3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold py-3.5 rounded-xl transition duration-200 neon-glow-indigo border border-indigo-500 text-center">
+                    Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

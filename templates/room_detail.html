@@ -1,0 +1,825 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.name }} - Room Detail - CricStake{% endblock %}
+
+{% block content %}
+{% load cricstake_filters %}
+<div class="space-y-8">
+    
+    <!-- Room Info Header -->
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <!-- Glowing Accent -->
+        <div class="absolute -top-12 -left-12 w-32 h-32 bg-indigo-500/10 rounded-full filter blur-2xl"></div>
+        
+        <div class="space-y-2 max-w-2xl">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-3xl sm:text-4xl font-black font-outfit text-white leading-tight">{{ room.name }}</h1>
+                {% if request.user == room.created_by %}
+                <a href="{% url 'room_settings' room.id %}" 
+                   title="Room Settings"
+                   class="ml-1 p-2 rounded-xl bg-white/5 hover:bg-indigo-500/20 border border-white/5 hover:border-indigo-500/30 text-gray-500 hover:text-indigo-400 transition group">
+                    <svg class="w-4 h-4 group-hover:rotate-45 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+            <p class="text-gray-400 text-sm sm:text-base leading-relaxed">
+                {{ room.description|default:"No description has been set for this prediction room." }}
+            </p>
+            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1 w-full">
+                <span class="flex items-center"><span class="mr-1">👑</span> Creator: <strong class="text-gray-300 ml-1">{{ room.created_by.username }}</strong></span>
+                <span class="flex items-center"><span class="mr-1">📅</span> Created: <span class="text-gray-300 ml-1">{{ room.created_at|date:"M d, Y" }}</span></span>
+                {% if request.user != room.created_by %}
+                <a href="{% url 'room_leave' room.id %}" 
+                   onclick="return confirm('Are you sure you want to leave this room? All your current predictions will remain but you will no longer be a member.');"
+                   class="inline-flex items-center px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 hover:border-rose-500 text-rose-400 hover:text-white font-bold transition ml-auto">
+                    🚪 Leave Room
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Active Prediction Markets Pills -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                <span class="text-[10px] uppercase tracking-wider text-gray-500 font-bold mr-1">Active Markets:</span>
+                {% if room.allow_winner_market %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">🏆 Winner</span>
+                {% endif %}
+                {% if room.allow_toss_market %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400">🪙 Toss</span>
+                {% endif %}
+                {% if room.allow_pom_market %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-purple-500/10 border border-purple-500/30 text-purple-400">⭐ POM</span>
+                {% endif %}
+                {% if room.allow_batter_market %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">🏏 Batter</span>
+                {% endif %}
+                {% if room.allow_bowler_market %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400">🎳 Bowler</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Invite Code Card -->
+        <div class="bg-obsidian-950/80 border border-white/10 p-5 rounded-2xl text-center min-w-[200px] w-full md:w-auto relative group">
+            <span class="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1">Invite Friends</span>
+            <code class="block text-2xl font-black font-mono text-indigo-400 tracking-widest uppercase mb-2 select-all">{{ room.invite_code }}</code>
+            <button id="copy-link-btn" onclick="copyInviteLink('{{ room.invite_code }}')" class="w-full text-center bg-indigo-500/10 hover:bg-indigo-600 hover:text-white border border-indigo-500/20 text-indigo-400 font-bold text-xs py-1.5 rounded-lg transition">
+                Copy Invite Link
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="border-b border-white/10 flex space-x-8 text-sm font-semibold overflow-x-auto pb-px">
+        <button onclick="switchTab('leaderboard')" id="tab-btn-leaderboard" class="tab-btn pb-4 border-b-2 border-indigo-500 text-indigo-400 focus:outline-none transition">
+            🏆 Leaderboard
+        </button>
+        <button onclick="switchTab('matches')" id="tab-btn-matches" class="tab-btn pb-4 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none transition">
+            🏏 Matches
+        </button>
+        <button onclick="switchTab('members')" id="tab-btn-members" class="tab-btn pb-4 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none transition">
+            🛡️ Members ({{ leaderboard|length }})
+        </button>
+        <a href="{% url 'room_history' room.id %}" class="pb-4 border-b-2 border-transparent text-gray-400 hover:text-indigo-400 focus:outline-none transition flex items-center space-x-1 whitespace-nowrap">
+            <span>📊</span><span>Prediction History</span>
+        </a>
+        <button onclick="switchTab('weekly')" id="tab-btn-weekly" class="tab-btn pb-4 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none transition">
+            👑 Weekly Champions
+        </button>
+        <button onclick="switchTab('rules')" id="tab-btn-rules" class="tab-btn pb-4 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none transition">
+            📜 Room Rules
+        </button>
+    </div>
+
+    <!-- Tab Contents -->
+    
+    <!-- Tab 1: Leaderboard -->
+    <div id="tab-content-leaderboard" class="tab-content space-y-10">
+        <!-- Top 3 Podium (If at least 1 member exists) -->
+        {% if leaderboard %}
+            <div class="flex flex-col sm:flex-row items-end justify-center gap-6 pt-10 pb-6 max-w-3xl mx-auto">
+                
+                <!-- 2nd Place (Silver) -->
+                {% if leaderboard|length > 1 %}
+                    {% with second=leaderboard.1.user %}
+                        <div class="order-2 sm:order-1 flex flex-col items-center w-full sm:w-48">
+                            <!-- User Header -->
+                            <div class="text-center mb-3">
+                                <a href="{% url 'user_profile' second.username %}" class="font-bold text-gray-200 hover:text-indigo-400 transition block text-sm sm:text-base">{{ second.username }}</a>
+                                <span class="text-xs text-emerald-400 font-bold block">{{ second.profile.coin_balance }} Coins</span>
+                            </div>
+                            <!-- Podium Step -->
+                            <div class="w-full h-24 bg-gradient-to-t from-gray-900/60 to-gray-700/30 border border-gray-600/30 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-lg shadow-gray-950/40">
+                                <div class="absolute inset-x-0 bottom-0 h-1 bg-gray-500"></div>
+                                <span class="text-3xl font-black font-outfit text-gray-400">2</span>
+                                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Silver</span>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endif %}
+
+                <!-- 1st Place (Gold) -->
+                {% if leaderboard|length > 0 %}
+                    {% with first=leaderboard.0.user %}
+                        <div class="order-1 sm:order-2 flex flex-col items-center w-full sm:w-56">
+                            <!-- Winner Crown / Icon -->
+                            <div class="text-3xl animate-bounce mb-1">👑</div>
+                            <!-- User Header -->
+                            <div class="text-center mb-3">
+                                <a href="{% url 'user_profile' first.username %}" class="font-black font-outfit text-white hover:text-indigo-400 transition block text-base sm:text-lg">{{ first.username }}</a>
+                                <span class="text-sm text-amber-400 font-bold block">{{ first.profile.coin_balance }} Coins</span>
+                            </div>
+                            <!-- Podium Step -->
+                            <div class="w-full h-32 bg-gradient-to-t from-amber-950/60 to-amber-700/30 border border-amber-600/30 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-2xl shadow-amber-950/40">
+                                <div class="absolute inset-x-0 bottom-0 h-1.5 bg-amber-500"></div>
+                                <span class="text-5xl font-black font-outfit text-amber-400">1</span>
+                                <span class="text-xs text-amber-500 uppercase tracking-widest font-bold">Champion</span>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endif %}
+
+                <!-- 3rd Place (Bronze) -->
+                {% if leaderboard|length > 2 %}
+                    {% with third=leaderboard.2.user %}
+                        <div class="order-3 flex flex-col items-center w-full sm:w-48">
+                            <!-- User Header -->
+                            <div class="text-center mb-3">
+                                <a href="{% url 'user_profile' third.username %}" class="font-bold text-gray-300 hover:text-indigo-400 transition block text-sm sm:text-base">{{ third.username }}</a>
+                                <span class="text-xs text-orange-400 font-bold block">{{ third.profile.coin_balance }} Coins</span>
+                            </div>
+                            <!-- Podium Step -->
+                            <div class="w-full h-20 bg-gradient-to-t from-orange-950/40 to-orange-700/20 border border-orange-700/20 rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-lg shadow-orange-950/20">
+                                <div class="absolute inset-x-0 bottom-0 h-1 bg-orange-700"></div>
+                                <span class="text-3xl font-black font-outfit text-orange-600">3</span>
+                                <span class="text-[10px] text-orange-700 uppercase tracking-widest font-bold">Bronze</span>
+                            </div>
+                        </div>
+                    {% endwith %}
+                {% endif %}
+
+            </div>
+        {% endif %}
+
+        <!-- Leaderboard Table -->
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-obsidian-950/60 text-xs uppercase tracking-wider text-gray-400 font-bold border-b border-white/5">
+                            <th class="px-6 py-4">Rank</th>
+                            <th class="px-6 py-4">Member</th>
+                            <th class="px-6 py-4 text-emerald-400">CricCoins</th>
+                            <th class="px-6 py-4">Accuracy</th>
+                            <th class="px-6 py-4">Streak</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for member in leaderboard %}
+                            <tr class="hover:bg-white/5 transition {% if member.user == request.user %}bg-indigo-500/5{% endif %}">
+                                <!-- Rank -->
+                                <td class="px-6 py-4 font-bold font-outfit text-sm">
+                                    {% if forloop.counter == 1 %}
+                                        <span class="inline-flex items-center justify-center w-6 h-6 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-full text-xs font-black">1st</span>
+                                    {% elif forloop.counter == 2 %}
+                                        <span class="inline-flex items-center justify-center w-6 h-6 bg-gray-500/20 border border-gray-500/30 text-gray-400 rounded-full text-xs font-black">2nd</span>
+                                    {% elif forloop.counter == 3 %}
+                                        <span class="inline-flex items-center justify-center w-6 h-6 bg-orange-700/20 border border-orange-700/30 text-orange-500 rounded-full text-xs font-black">3rd</span>
+                                    {% else %}
+                                        <span class="text-gray-500">#{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </td>
+                                <!-- User -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <a href="{% url 'user_profile' member.user.username %}" class="font-bold text-white hover:text-indigo-400 transition">{{ member.user.username }}</a>
+                                        {% if member.user == request.user %}
+                                            <span class="bg-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">You</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <!-- Balance -->
+                                <td class="px-6 py-4 font-bold font-outfit text-emerald-400 text-sm sm:text-base">
+                                    {{ member.user.profile.coin_balance }}
+                                </td>
+                                <!-- Accuracy -->
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-gray-300 text-sm">{{ member.user.profile.accuracy_percentage }}%</span>
+                                        <!-- Mini bar -->
+                                        <div class="w-16 bg-white/5 rounded-full h-1 overflow-hidden hidden sm:block">
+                                            <div class="bg-indigo-500 h-1" style="width: {{ member.user.profile.accuracy_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- Streak -->
+                                <td class="px-6 py-4">
+                                    {% if member.user.profile.current_streak > 0 %}
+                                        <span class="inline-flex items-center text-xs font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                            {{ member.user.profile.current_streak }} Correct 🔥
+                                        </span>
+                                    {% else %}
+                                        <span class="text-gray-600 text-xs">No active streak</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Matches -->
+    <div id="tab-content-matches" class="tab-content hidden space-y-10">
+        
+        <!-- Section 1: Upcoming & Live -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold font-outfit text-white flex items-center">
+                <span class="mr-2">📅</span> Upcoming Matchups
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% if upcoming_matches %}
+                    {% for match in upcoming_matches %}
+                        <div class="glass-panel p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between border border-white/5">
+                            
+                            <!-- Header Info -->
+                            <div class="flex items-center justify-between pb-3 border-b border-white/5 text-xs text-gray-400">
+                                <span class="font-bold uppercase tracking-wider text-indigo-400">IPL {{ match.match_datetime|date:"Y" }}</span>
+                                {% if match.venue %}
+                                <span class="text-gray-500 text-[11px] font-medium flex items-center max-w-[150px] truncate" title="{{ match.venue }}">
+                                    <span class="mr-1">📍</span>{{ match.venue }}
+                                </span>
+                                {% endif %}
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                                    Predictions Open
+                                </span>
+                            </div>
+
+                            <!-- Team vs Team Layout -->
+                            <div class="py-6 flex items-center justify-between gap-4">
+                                <!-- Team A -->
+                                <div class="flex-1 flex flex-col items-center text-center">
+                                    <!-- Render SVG Logo -->
+                                    <div class="mb-2 w-12 h-12 flex items-center justify-center">
+                                        {{ match.team_a.logo_svg|safe }}
+                                    </div>
+                                    <span class="font-bold font-outfit text-white block text-sm">{{ match.team_a.short_name }}</span>
+                                    <span class="text-gray-500 text-[10px] hidden sm:block">{{ match.team_a.name }}</span>
+                                </div>
+
+                                <!-- VS Indicator -->
+                                <div class="text-center">
+                                    <span class="inline-block bg-white/5 border border-white/10 px-3 py-1 rounded-full text-xs font-black font-outfit text-indigo-300">VS</span>
+                                    <span class="block text-gray-500 text-[10px] mt-1">{{ match.match_datetime|date:"M d" }}</span>
+                                    <span class="block text-gray-400 text-xs font-bold mt-0.5">{{ match.match_datetime|date:"h:i A" }}</span>
+                                </div>
+
+                                <!-- Team B -->
+                                <div class="flex-1 flex flex-col items-center text-center">
+                                    <!-- Render SVG Logo -->
+                                    <div class="mb-2 w-12 h-12 flex items-center justify-center">
+                                        {{ match.team_b.logo_svg|safe }}
+                                    </div>
+                                    <span class="font-bold font-outfit text-white block text-sm">{{ match.team_b.short_name }}</span>
+                                    <span class="text-gray-500 text-[10px] hidden sm:block">{{ match.team_b.name }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Lock Countdown / Action Button -->
+                            <div class="pt-3 border-t border-white/5">
+                                {% if match.id in predicted_match_ids %}
+                                    <!-- Already Predicted -->
+                                    <a href="{% url 'match_predict' room.id match.id %}" class="w-full block text-center bg-emerald-500/10 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 hover:border-emerald-500 text-emerald-400 font-bold px-6 py-2.5 rounded-xl text-sm transition">
+                                        ✓ Predicted (Edit Stake)
+                                    </a>
+                                {% else %}
+                                    <!-- Open for prediction -->
+                                    <a href="{% url 'match_predict' room.id match.id %}" class="w-full block text-center bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition neon-glow-indigo border border-indigo-500 animate-pulse">
+                                        Place predictions
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="md:col-span-2 glass-panel p-8 rounded-2xl text-center text-gray-400 text-sm">
+                        No upcoming matches loaded. Stay tuned for the next IPL schedule!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Section 2: Completed / Settled History -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold font-outfit text-white flex items-center">
+                <span class="mr-2">💾</span> Historical Outcomes
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% if completed_matches %}
+                    {% for match in completed_matches %}
+                        <div class="glass-panel p-5 rounded-2xl border border-white/5 opacity-85">
+                            
+                            <div class="flex items-center justify-between pb-2 border-b border-white/5 text-xs text-gray-500">
+                                <span>{{ match.match_datetime|date:"M d, Y" }}</span>
+                                {% if match.venue %}
+                                <span class="text-gray-500 text-[11px] font-medium flex items-center max-w-[150px] truncate" title="{{ match.venue }}">
+                                    <span class="mr-1">📍</span>{{ match.venue }}
+                                </span>
+                                {% endif %}
+                                <span class="font-bold uppercase {% if match.status == 'completed' %}text-emerald-400{% else %}text-rose-400{% endif %}">
+                                    {{ match.status }}
+                                </span>
+                            </div>
+
+                            <div class="py-4 flex items-center justify-between text-sm">
+                                <span class="font-bold text-white">{{ match.team_a.short_name }} vs {{ match.team_b.short_name }}</span>
+                                
+                                {% if match.status == 'completed' %}
+                                    <span class="text-xs text-gray-400">Winner: <strong class="text-emerald-400 font-bold ml-1">{{ match.winner.short_name }}</strong></span>
+                                {% else %}
+                                    <span class="text-xs text-rose-400 font-bold uppercase">All Bets Refunded</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="pt-2">
+                                <a href="{% url 'match_predict' room.id match.id %}" class="block text-center bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold py-2 rounded-xl transition border border-white/5">
+                                    View Predictions Matrix
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="md:col-span-2 glass-panel p-6 rounded-2xl text-center text-gray-500 text-sm">
+                        No historical matches recorded yet in this room.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Members -->
+    <div id="tab-content-members" class="tab-content hidden space-y-6">
+        <h2 class="text-xl font-bold font-outfit text-white flex items-center">
+            <span class="mr-2">🛡️</span> Room Participants
+        </h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {% for member in leaderboard %}
+                <div class="glass-panel p-5 rounded-2xl flex items-center justify-between border border-white/5">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold font-outfit flex items-center justify-center rounded-xl text-lg">
+                            {{ member.user.username|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <a href="{% url 'user_profile' member.user.username %}" class="font-bold text-white hover:text-indigo-400 transition text-sm">{{ member.user.username }}</a>
+                            <span class="block text-[10px] text-gray-500">Joined {{ member.joined_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    {% if member.user == room.created_by %}
+                        <span class="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Admin</span>
+                    {% elif request.user == room.created_by %}
+                        <button type="button" 
+                                onclick="confirmKick('{{ member.user.username }}', '{% url 'room_kick' room.id member.user.id %}')"
+                                class="bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 hover:border-rose-600 text-rose-400 hover:text-white text-[10px] px-2.5 py-1.5 rounded-lg font-bold uppercase tracking-wider transition">
+                            Kick
+                        </button>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tab 4: Weekly Champions -->
+    <div id="tab-content-weekly" class="tab-content hidden space-y-6">
+        <h2 class="text-xl font-bold font-outfit text-white flex items-center">
+            <span class="mr-2">👑</span> Room Hall of Fame
+        </h2>
+        
+        <div class="space-y-4">
+            {% if weekly_champions %}
+                {% for champ in weekly_champions %}
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-amber-500 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="block text-[10px] uppercase tracking-wider text-gray-500 font-bold">Week Starting</span>
+                            <span class="font-bold text-white font-outfit text-base sm:text-lg block">{{ champ.week_start|date:"l, M d, Y" }}</span>
+                        </div>
+                        <div class="flex items-center space-x-3 bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 rounded-xl">
+                            <span class="text-2xl">👑</span>
+                            <div>
+                                <a href="{% url 'user_profile' champ.user.username %}" class="font-black text-amber-400 hover:text-amber-300 transition text-sm sm:text-base">{{ champ.user.username }}</a>
+                                <span class="block text-[9px] uppercase font-bold text-amber-500/80">Weekly Winner</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-panel p-10 rounded-2xl text-center space-y-3">
+                    <span class="text-5xl block">👑</span>
+                    <h3 class="text-lg font-bold font-outfit text-white">No Champions Yet</h3>
+                    <p class="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
+                        Weekly champions are computed automatically based on settled predictions in this room. Settle predictions in the admin panel to crown the week's winner!
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab 5: Room Rules -->
+    <div id="tab-content-rules" class="tab-content hidden">
+        <div class="glass-panel p-8 sm:p-10 rounded-2xl border border-white/5 shadow-2xl space-y-8 relative overflow-hidden">
+            <!-- Background glow -->
+            <div class="absolute -top-16 -right-16 w-40 h-40 bg-indigo-500/10 rounded-full filter blur-3xl"></div>
+            <div class="absolute -bottom-16 -left-16 w-40 h-40 bg-purple-500/10 rounded-full filter blur-3xl"></div>
+
+            <!-- Header -->
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600/30 to-purple-600/20 border border-indigo-500/20 flex items-center justify-center text-2xl">
+                    📜
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black font-outfit text-white">Room Rulebook</h2>
+                    <p class="text-gray-400 text-sm">How CricCoins are staked & won in <strong class="text-indigo-400">{{ room.name }}</strong></p>
+                </div>
+            </div>
+
+            <!-- Core Rules -->
+            <div class="space-y-4">
+                <h3 class="text-xs uppercase tracking-widest text-indigo-400 font-black mb-3">⚡ Core Rules</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5">
+                        <span class="text-base">🎰</span>
+                        <p class="text-white font-bold text-sm">Place Stakes Before Match</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">All predictions must be placed before the match starts. Once the match is live, stakes are locked and cannot be changed.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5">
+                        <span class="text-base">💰</span>
+                        <p class="text-white font-bold text-sm">CricCoins Currency</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">Every player starts with 1,000 CricCoins. Coins are used to place bets and multiplied on correct predictions.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5">
+                        <span class="text-base">✅</span>
+                        <p class="text-white font-bold text-sm">Automatic Settlement</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">When the match ends, the platform automatically settles all predictions and credits winnings to your wallet.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5">
+                        <span class="text-base">🔥</span>
+                        <p class="text-white font-bold text-sm">Prediction Streaks</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">Correct predictions in a row build your streak. Longer streaks unlock exclusive badges and prestige.</p>
+                    </div>
+                    <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5 sm:col-span-2">
+                        <span class="text-base">⟲</span>
+                        <p class="text-white font-bold text-sm">Abandoned Match Refunds</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">If a match is abandoned or cancelled, all stakes are automatically refunded in full — no coins lost.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Prediction Markets for this Room -->
+            <div class="space-y-4">
+                <h3 class="text-xs uppercase tracking-widest text-indigo-400 font-black mb-3">🏟️ Active Prediction Markets in This Room</h3>
+                <p class="text-gray-500 text-xs mb-4">Only the markets listed below are enabled for betting in <strong class="text-white">{{ room.name }}</strong>. Markets not shown here have been disabled by the admin.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% if room.allow_winner_market %}
+                    <div class="bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-black text-sm">🏆 Match Winner</span>
+                            <span class="bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">1.5x</span>
+                        </div>
+                        <p class="text-gray-400 text-xs leading-relaxed">Predict which team wins the match. Correct pick returns 1.5× your stake.</p>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_toss_market %}
+                    <div class="bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-black text-sm">🪙 Toss Winner</span>
+                            <span class="bg-amber-600/20 border border-amber-500/30 text-amber-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">2.0x</span>
+                        </div>
+                        <p class="text-gray-400 text-xs leading-relaxed">Guess who wins the toss. 50/50 chance with a 2× multiplier for the risk.</p>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_pom_market %}
+                    <div class="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-black text-sm">⭐ Player of Match</span>
+                            <span class="bg-purple-600/20 border border-purple-500/30 text-purple-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">4.0x</span>
+                        </div>
+                        <p class="text-gray-400 text-xs leading-relaxed">Pick the star performer of the match. High risk, highest reward at 4×.</p>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_batter_market %}
+                    <div class="bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-black text-sm">🏏 Top Batter</span>
+                            <span class="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">3.0x</span>
+                        </div>
+                        <p class="text-gray-400 text-xs leading-relaxed">Predict who scores the most runs in the match. Returns 3× on a correct pick.</p>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_bowler_market %}
+                    <div class="bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/20 rounded-2xl p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white font-black text-sm">🎳 Top Bowler</span>
+                            <span class="bg-rose-600/20 border border-rose-500/30 text-rose-400 text-[10px] font-black px-2.5 py-0.5 rounded-full">3.0x</span>
+                        </div>
+                        <p class="text-gray-400 text-xs leading-relaxed">Predict who takes the most wickets in the match. Returns 3× on a correct pick.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Leaderboard Info -->
+            <div class="bg-white/5 border border-white/5 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div class="text-3xl">👑</div>
+                <div>
+                    <p class="text-white font-bold text-sm">Weekly Champion</p>
+                    <p class="text-gray-400 text-xs leading-relaxed">Each week, the member with the highest coin balance earns the Weekly Champion title. Champions are recorded in the hall of fame above.</p>
+                </div>
+            </div>
+
+            <!-- Footer tip -->
+            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 text-xs text-indigo-300 leading-relaxed">
+                ℹ️ Room rules and active markets are configured by the room admin — <strong>{{ room.created_by.username }}</strong>. Use the 📜 tab anytime to review which markets you can bet on before placing your stakes!
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Interactive JS Tab Switcher and Copy Script -->
+<script>
+    function switchTab(tabId) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(element => {
+            element.classList.add('hidden');
+        });
+        // Show active tab
+        document.getElementById('tab-content-' + tabId).classList.remove('hidden');
+
+        // Reset all buttons styling
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('border-indigo-500', 'text-indigo-400');
+            btn.classList.add('border-transparent', 'text-gray-400');
+        });
+        // Set active button style
+        document.getElementById('tab-btn-' + tabId).classList.remove('border-transparent', 'text-gray-400');
+        document.getElementById('tab-btn-' + tabId).classList.add('border-indigo-500', 'text-indigo-400');
+    }
+
+    function copyInviteLink(code) {
+        const inviteLink = window.location.origin + '/room/join/?code=' + code;
+        navigator.clipboard.writeText(inviteLink).then(() => {
+            const btn = document.getElementById('copy-link-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Copied! ✓';
+            btn.classList.remove('bg-indigo-500/10', 'text-indigo-400');
+            btn.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-emerald-500/20', 'text-emerald-400', 'border-emerald-500/30');
+                btn.classList.add('bg-indigo-500/10', 'text-indigo-400');
+            }, 2000);
+        }).catch(err => {
+            console.error("Could not copy link", err);
+        });
+    }
+</script>
+
+<!-- ====== RULE BOOK MODAL ====== -->
+<div id="rules-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeRulesModal()"></div>
+    
+    <!-- Modal Card -->
+    <div id="rules-modal-card" class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-gradient-to-br from-[#0d0d1a] to-[#0a0a14] border border-indigo-500/30 rounded-3xl shadow-2xl p-0 transform scale-90 opacity-0 transition-all duration-300">
+        
+        <!-- Glow effects -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full filter blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-600/15 rounded-full filter blur-2xl pointer-events-none"></div>
+
+        <!-- Header gradient banner -->
+        <div class="relative bg-gradient-to-r from-indigo-900/60 to-purple-900/40 border-b border-indigo-500/20 p-6 rounded-t-3xl">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/30">
+                        📜
+                    </div>
+                    <div>
+                        <p class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-0.5">Welcome to the Room</p>
+                        <h2 class="text-white font-black font-outfit text-xl sm:text-2xl leading-tight">{{ room.name }}</h2>
+                        <p class="text-gray-400 text-xs mt-0.5">Read the rules before you stake your CricCoins!</p>
+                    </div>
+                </div>
+                <button onclick="closeRulesModal()" class="text-gray-500 hover:text-white transition p-1.5 rounded-xl hover:bg-white/10 mt-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 sm:p-8 space-y-6">
+
+            <!-- Quick Rules -->
+            <div>
+                <h3 class="text-xs uppercase tracking-widest text-indigo-400 font-black mb-3">⚡ How it Works</h3>
+                <ul class="space-y-2.5">
+                    <li class="flex items-start space-x-3">
+                        <span class="text-indigo-400 mt-0.5 text-sm font-black">1.</span>
+                        <span class="text-gray-300 text-sm leading-relaxed">Place your <strong class="text-white">CricCoin stakes</strong> on any available prediction market before the match begins.</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="text-indigo-400 mt-0.5 text-sm font-black">2.</span>
+                        <span class="text-gray-300 text-sm leading-relaxed">Once the match starts, <strong class="text-white">all stakes are locked</strong> — no editing or cancellation.</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="text-indigo-400 mt-0.5 text-sm font-black">3.</span>
+                        <span class="text-gray-300 text-sm leading-relaxed">Winnings are <strong class="text-white">automatically credited</strong> to your wallet when the match ends.</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="text-indigo-400 mt-0.5 text-sm font-black">4.</span>
+                        <span class="text-gray-300 text-sm leading-relaxed">Abandoned matches result in a <strong class="text-white">full refund</strong> — no coins lost.</span>
+                    </li>
+                    <li class="flex items-start space-x-3">
+                        <span class="text-indigo-400 mt-0.5 text-sm font-black">5.</span>
+                        <span class="text-gray-300 text-sm leading-relaxed">Build prediction <strong class="text-white">streaks</strong> for exclusive badges and weekly champion prestige!</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Active Markets in This Room -->
+            <div>
+                <h3 class="text-xs uppercase tracking-widest text-indigo-400 font-black mb-3">🏟️ Active Markets in This Room</h3>
+                <div class="space-y-2">
+                    {% if room.allow_winner_market %}
+                    <div class="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5">
+                        <span class="text-white text-sm font-bold">🏆 Match Winner</span>
+                        <span class="text-indigo-400 font-black text-xs">1.5× Multiplier</span>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_toss_market %}
+                    <div class="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2.5">
+                        <span class="text-white text-sm font-bold">🪙 Toss Winner</span>
+                        <span class="text-amber-400 font-black text-xs">2.0× Multiplier</span>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_pom_market %}
+                    <div class="flex items-center justify-between bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-2.5">
+                        <span class="text-white text-sm font-bold">⭐ Player of Match</span>
+                        <span class="text-purple-400 font-black text-xs">4.0× Multiplier</span>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_batter_market %}
+                    <div class="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                        <span class="text-white text-sm font-bold">🏏 Top Batter</span>
+                        <span class="text-emerald-400 font-black text-xs">3.0× Multiplier</span>
+                    </div>
+                    {% endif %}
+                    {% if room.allow_bowler_market %}
+                    <div class="flex items-center justify-between bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-2.5">
+                        <span class="text-white text-sm font-bold">🎳 Top Bowler</span>
+                        <span class="text-rose-400 font-black text-xs">3.0× Multiplier</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Admin note -->
+            <div class="bg-white/5 border border-white/5 rounded-xl p-4 text-xs text-gray-400 leading-relaxed">
+                👑 This room is managed by <strong class="text-white">{{ room.created_by.username }}</strong>. Visit the <strong class="text-indigo-400">📜 Room Rules</strong> tab anytime to review these details.
+            </div>
+
+            <!-- CTA -->
+            <button onclick="closeRulesModal()" 
+                    class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-black py-3.5 rounded-2xl transition duration-200 border border-indigo-500 text-sm tracking-wide">
+                Let's Go! 🚀 Start Predicting
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRulesModal() {
+        const modal = document.getElementById('rules-modal');
+        const card  = document.getElementById('rules-modal-card');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        // Animate in
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                card.classList.remove('scale-90', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            });
+        });
+    }
+
+    function closeRulesModal() {
+        const modal = document.getElementById('rules-modal');
+        const card  = document.getElementById('rules-modal-card');
+        card.classList.remove('scale-100', 'opacity-100');
+        card.classList.add('scale-90', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 280);
+    }
+
+    // Auto-fire on ?joined=true and then clean URL
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('joined') === 'true') {
+            openRulesModal();
+            // Remove the query param cleanly so refresh doesn't re-trigger
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    })();
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeRulesModal();
+            closeKickModal();
+        }
+    });
+</script>
+
+<!-- ====== CUSTOM KICK CONFIRMATION MODAL ====== -->
+<div id="kick-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeKickModal()"></div>
+    
+    <!-- Modal Card -->
+    <div id="kick-modal-card" class="relative w-full max-w-md bg-gradient-to-br from-[#12070d] to-[#0a060d] border border-rose-500/30 rounded-3xl shadow-2xl p-6 sm:p-8 transform scale-90 opacity-0 transition-all duration-300">
+        
+        <!-- Glow effects -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-600/10 rounded-full filter blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-600/5 rounded-full filter blur-2xl pointer-events-none"></div>
+
+        <div class="text-center space-y-5">
+            <!-- Warning Icon -->
+            <div class="mx-auto w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-3xl shadow-lg shadow-rose-500/10 animate-pulse">
+                ⚠️
+            </div>
+            
+            <div class="space-y-2">
+                <h3 class="text-xl font-black font-outfit text-white">Kick Room Member?</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Are you sure you want to remove <strong id="kick-username" class="text-rose-400">username</strong> from the room <strong class="text-white">{{ room.name }}</strong>?
+                </p>
+                <p class="text-xs text-gray-500">
+                    This user will lose access to the room dashboard, leaderboard, and live Head-to-Head matrices.
+                </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <button onclick="closeKickModal()" 
+                        class="w-full sm:w-1/2 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/5 font-bold py-3 rounded-2xl transition text-sm">
+                    Cancel
+                </button>
+                <a id="kick-confirm-btn" href="#" 
+                   class="w-full sm:w-1/2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black py-3 rounded-2xl transition border border-rose-500 text-sm text-center shadow-lg shadow-rose-950/50">
+                    Yes, Kick Member
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmKick(username, kickUrl) {
+        document.getElementById('kick-username').textContent = username;
+        document.getElementById('kick-confirm-btn').setAttribute('href', kickUrl);
+        
+        const modal = document.getElementById('kick-modal');
+        const card  = document.getElementById('kick-modal-card');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                card.classList.remove('scale-90', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            });
+        });
+    }
+
+    function closeKickModal() {
+        const modal = document.getElementById('kick-modal');
+        const card  = document.getElementById('kick-modal-card');
+        card.classList.remove('scale-100', 'opacity-100');
+        card.classList.add('scale-90', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 280);
+    }
+</script>
+{% endblock %}

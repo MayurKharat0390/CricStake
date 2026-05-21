@@ -1,0 +1,17 @@
+# CricStake Dependency Manifest for Production Deployments
+# Auto-installed by Render, Vercel, and PythonAnywhere
+
+# Core Framework
+Django>=4.2,<5.0
+
+# Authentication & Environment
+django-allauth>=0.56.0
+python-dotenv>=1.0.0
+
+# Database Helpers (SQLite / PostgreSQL Support)
+dj-database-url>=2.1.0
+psycopg2-binary>=2.9.0
+
+# Production App Servers & Static Files Serving
+gunicorn>=21.2.0
+whitenoise>=6.5.0
