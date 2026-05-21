@@ -8,6 +8,8 @@ Django>=4.2,<5.0
 django-allauth>=0.56.0
 python-dotenv>=1.0.0
 requests>=2.31.0
+pyjwt>=2.8.0
+cryptography>=41.0.0
 
 # Database Helpers (SQLite / PostgreSQL Support)
 dj-database-url>=2.1.0
